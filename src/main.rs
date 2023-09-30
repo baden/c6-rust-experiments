@@ -1,8 +1,8 @@
 use esp_idf_sys as _; // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
 use log::*;
 
-// use esp_idf_hal::delay::{FreeRtos, BLOCK};
-use esp_idf_hal::{i2c::*};
+use esp_idf_hal::delay::FreeRtos;
+use esp_idf_hal::i2c::*;
 use esp_idf_hal::peripherals::Peripherals;
 use esp_idf_hal::prelude::*;
 
@@ -11,7 +11,9 @@ use embedded_graphics::{
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Baseline, Text},
+    primitives::{Rectangle, PrimitiveStyleBuilder}
 };
+// use embedded_graphics::pixelcolor::*;
 use ssd1306::{
     // mode::BufferedGraphicsMode,
     prelude::*,
@@ -22,6 +24,7 @@ use ssd1306::{
 // const SSD1306_ADDRESS: u8 = 0x3c;
 
 fn main() {
+    let mut counter: u32 = 0;
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
     esp_idf_sys::link_patches();
@@ -47,7 +50,7 @@ fn main() {
     )
     .into_buffered_graphics_mode();
     display.init().unwrap();
-    // display.clear();
+    display.clear(BinaryColor::Off).unwrap();
     display.flush().unwrap();
 
     let text_style = MonoTextStyleBuilder::new()
@@ -56,7 +59,7 @@ fn main() {
         .build();
 
     Text::with_baseline(
-        "Hello world!",
+        "Hello, world!",
         Point::zero(),
         text_style,
         Baseline::Top
@@ -66,45 +69,27 @@ fn main() {
 
     info!("Hello, world!");
 
-    // initialze the display - don't worry about the meaning of these bytes - it's specific to SSD1306
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xae], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xd4], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x80], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xa8], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x3f], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xd3], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x00], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x40], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x8d], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x14], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xa1], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xc8], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xda], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x12], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x81], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xcf], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xf1], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xdb], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x40], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xa4], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xa6], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0xaf], BLOCK).unwrap();
-    // i2c.write(SSD1306_ADDRESS, &[0, 0x20, 0x00], BLOCK).unwrap();
+    let clear = PrimitiveStyleBuilder::new()
+        .stroke_color(BinaryColor::Off)
+        .fill_color(BinaryColor::Off)
+        .build();
 
-    // // fill the display
-    // for _ in 0..64 {
-    //     let data: [u8; 17] = [
-    //         0x40, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    //         0xff, 0xff, 0xff,
-    //     ];
-    //     i2c.write(SSD1306_ADDRESS, &data, BLOCK).unwrap();
-    // }
+    loop {
+        Rectangle::new(
+            Point::new(0, 16),
+            Size::new(128, 16)
+        ).into_styled(clear).draw(&mut display).unwrap();
+        Text::with_baseline(
+            &format!("Counter: {}", counter),
+            Point::new(0, 16),
+            text_style,
+            Baseline::Top
+        ).draw(&mut display).unwrap();
+        counter += 1;
 
-    // loop {
-    //     // we are sleeping here to make sure the watchdog isn't triggered
-    //     FreeRtos::delay_ms(500);
-    //     i2c.write(SSD1306_ADDRESS, &[0, 0xa6], BLOCK).unwrap();
-    //     FreeRtos::delay_ms(500);
-    //     i2c.write(SSD1306_ADDRESS, &[0, 0xa7], BLOCK).unwrap();
-    // }    
+        display.flush().unwrap();
+        FreeRtos::delay_ms(1000);
+    }    
+
+
 }
